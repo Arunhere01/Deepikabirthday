@@ -1102,112 +1102,107 @@ Muh dho aao ar acha mood krlo ab`,
 
         // Puzzle Game
         let puzzleState = [];
-        let emptyPos = 15;
-        const useImage = false; // Set to true to use puzzle.jpg
+  let emptyPos = 15;
 
-        function initPuzzle() {
-            puzzleState = Array.from({length: 16}, (_, i) => i);
-            emptyPos = 15;
-            renderPuzzle();
-        }
+  // Turn image mode ON and define the image name
+  const useImage = true;             // <<<<<< enable image tiles
+  const PUZZLE_IMG = 'puzzle.jpg';   // must sit next to index.html
+  let imageReady = false;
 
-        function renderPuzzle() {
-            const board = document.getElementById('puzzleBoard');
-            board.innerHTML = '';
-            puzzleState.forEach((num, index) => {
-                const tile = document.createElement('div');
-                tile.className = 'puzzle-tile' + (num === 15 ? ' empty' : '');
-                
-                if (useImage && num !== 15) {
-                    tile.classList.add('image-tile');
-                    const row = Math.floor(num / 4);
-                    const col = num % 4;
-                    tile.style.backgroundPosition = `${col * 33.33}% ${row * 33.33}%`;
-                } else {
-                    tile.textContent = num === 15 ? '' : num + 1;
-                }
-                
-                tile.onclick = () => moveTile(index);
-                board.appendChild(tile);
-            });
-        }
+  // Preload the puzzle image so tiles only switch when ready
+  (function preloadPuzzleImage() {
+    const img = new Image();
+    img.onload = () => { imageReady = true; renderPuzzle(); };
+    img.onerror = () => { imageReady = false; renderPuzzle(); };
+    img.src = PUZZLE_IMG;
+  })();
 
-        function moveTile(index) {
-            const row = Math.floor(index / 4);
-            const col = index % 4;
-            const emptyRow = Math.floor(emptyPos / 4);
-            const emptyCol = emptyPos % 4;
+  function initPuzzle() {
+    puzzleState = Array.from({ length: 16 }, (_, i) => i);
+    emptyPos = 15;
+    renderPuzzle();
+  }
 
-            if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
-                (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
-                [puzzleState[index], puzzleState[emptyPos]] = [puzzleState[emptyPos], puzzleState[index]];
-                emptyPos = index;
-                renderPuzzle();
-                checkWin();
-            }
-        }
+  function renderPuzzle() {
+    const board = document.getElementById('puzzleBoard');
+    board.innerHTML = '';
+    puzzleState.forEach((num, index) => {
+      const tile = document.createElement('div');
+      tile.className = 'puzzle-tile' + (num === 15 ? ' empty' : '');
 
-        function getNeighbors(pos) {
-            const row = Math.floor(pos / 4);
-            const col = pos % 4;
-            const neighbors = [];
+      if (useImage && imageReady && num !== 15) {
+        // Use the image and position the correct slice
+        tile.classList.add('image-tile');
+        // Set the background image explicitly (robust on GitHub Pages)
+        tile.style.backgroundImage = `url(${PUZZLE_IMG})`;
+        const row = Math.floor(num / 4);
+        const col = num % 4;
+        tile.style.backgroundPosition = `${col * 33.33}% ${row * 33.33}%`;
+        // prevent numbers showing on top
+        tile.textContent = '';
+      } else {
+        // Fallback: numbers (while loading or if image missing)
+        tile.textContent = num === 15 ? '' : num + 1;
+      }
 
-            if (row > 0) neighbors.push(pos - 4);
-            if (row < 3) neighbors.push(pos + 4);
-            if (col > 0) neighbors.push(pos - 1);
-            if (col < 3) neighbors.push(pos + 1);
+      tile.onclick = () => moveTile(index);
+      board.appendChild(tile);
+    });
+  }
 
-            return neighbors;
-        }
+  function moveTile(index) {
+    const row = Math.floor(index / 4);
+    const col = index % 4;
+    const emptyRow = Math.floor(emptyPos / 4);
+    const emptyCol = emptyPos % 4;
 
-        function shufflePuzzle() {
-            for (let i = 0; i < 100; i++) {
-                const neighbors = getNeighbors(emptyPos);
-                const randomNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
-                moveTile(randomNeighbor);
-            }
-        }
+    if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+        (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
+      [puzzleState[index], puzzleState[emptyPos]] = [puzzleState[emptyPos], puzzleState[index]];
+      emptyPos = index;
+      renderPuzzle();
+      checkWin();
+    }
+  }
 
-        function solvePuzzle() {
-            puzzleState = Array.from({length: 16}, (_, i) => i);
-            emptyPos = 15;
-            renderPuzzle();
-        }
+  function getNeighbors(pos) {
+    const row = Math.floor(pos / 4);
+    const col = pos % 4;
+    const neighbors = [];
+    if (row > 0) neighbors.push(pos - 4);
+    if (row < 3) neighbors.push(pos + 4);
+    if (col > 0) neighbors.push(pos - 1);
+    if (col < 3) neighbors.push(pos + 1);
+    return neighbors;
+  }
 
-        function checkWin() {
-            const isSolved = puzzleState.every((num, index) => num === index);
-            if (isSolved) {
-                setTimeout(() => {
-                    alert('🎉 You solved it! Amazing job, Ladduu! 💕');
-                }, 300);
-            }
-        }
+  function shufflePuzzle() {
+    for (let i = 0; i < 100; i++) {
+      const neighbors = getNeighbors(emptyPos);
+      const randomNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+      moveTile(randomNeighbor);
+    }
+  }
 
-        initPuzzle();
+  function solvePuzzle() {
+    puzzleState = Array.from({ length: 16 }, (_, i) => i);
+    emptyPos = 15;
+    renderPuzzle();
+  }
 
-        // You Section - Infinite Scroll
-        const youContainer = document.getElementById('youContainer');
-        if (youContainer) {
-            youContainer.addEventListener('scroll', () => {
-                const scrollTop = youContainer.scrollTop;
-                const scrollHeight = youContainer.scrollHeight;
-                const clientHeight = youContainer.clientHeight;
-                
-                // Clone items for infinite scroll
-                if (scrollTop + clientHeight >= scrollHeight - 10) {
-                    const items = youContainer.querySelectorAll('.you-item');
-                    items.forEach(item => {
-                        const clone = item.cloneNode(true);
-                        youContainer.appendChild(clone);
-                    });
-                }
-            });
-        }
+  function checkWin() {
+    const isSolved = puzzleState.every((num, index) => num === index);
+    if (isSolved) {
+      setTimeout(() => {
+        alert('🎉 You solved it! Amazing job, Ladduu! 💕');
+      }, 300);
+    }
+  }
 
-        // Envelope Opening
-        function openEnvelope() {
-            document.getElementById('specialEnvelope').classList.toggle('opened');
-        }
-    </script>
+  initPuzzle();
+
+  // --- keep the rest of your script (modal, story, etc.) below ---
+</script>
 </body>
+
 </html>
